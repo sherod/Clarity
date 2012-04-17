@@ -1,4 +1,5 @@
-# Copyright (c) 2012 Steven Herod, http://github.com/sherod/clarity
+#!/usr/bin/ruby
+# Copyright (c) 2012 Steven Herod, http://github.com/sherod/Clarity
 
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
