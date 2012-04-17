@@ -24,4 +24,25 @@ Expected log file is in the following format:
 16:13:02.030 (30856000)|VF_DESERIALIZE_VIEWSTATE_END
 (etc etc)
 
+And outputs a log in the format:
+
+ calls VF: /apex/personaccountedit
+        calls PersonAccountEditController get(IsNew)
+            calls IsNew
+                calls PersonAccountEditController.PersonAccountEditController()
+                calls PersonAccountEditController get(PersonDetails)
+                    calls PersonDetails
+                        calls PersonAccountEditController invoke(sync)
+                            calls CustomerSync.CustomerSync()
+                            calls CustomerSync.syncCustomer(Id)
+                                calls Common.Common()
+                                calls Common.retrieveRecord(String, LIST, Id)
+                                    calls Common.retrieveRecord(String, SET, Id)
+                                        calls Common.createQuery(String, SET, Id)
+                                            calls QueryBuilder.QueryBuilder()
+                                            calls QueryBuilder.defaultAnd()
+                                            calls QueryBuilder.addField(String)
+                                            calls QueryBuilder.addFields(SET)
+
+
 Feedback welcome to @sherod on twitter or via github.  
