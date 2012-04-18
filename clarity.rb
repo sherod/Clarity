@@ -24,28 +24,72 @@
 
 begin
 
-    if (ARGV.length != 1)
-        puts "Usage: ruby clarity.rb [filename]"
+  def filtered_puts(mode, string)
+   
+  if (mode == @currentMode || @currentMode == :ALL)
+      puts string
+  end
+end
+
+    if (ARGV.length < 1 or ARGV.length > 3)
+        puts "Usage: ruby clarity.rb [MODE] [filename]"
         exit(1)
     end
 
-    file = File.new(ARGV[0], "r")
+    if (ARGV.length == 1)
+      @currentMode = :ALL
+      filename = ARGV[0]
+    else
+      @currentMode = ARGV[0].intern
+      filename = ARGV[1]  
+    end
+
+  
+    file = File.new(filename, "r")
     indent = Array.new()
+    soqlLineFlush = false
+    soqlBuffer = ""
+    currentMethodName = ""
+
     while (line = file.gets)
             pos = 0
             methodLine = false
+            soqlLine = false
              line.split("|").each {|e|
+                e.strip!
+                if (pos == 1) 
+                  
+                  if (e == "METHOD_ENTRY" or e== "CODE_UNIT_STARTED")
+                    indent.push(" ")
+                    methodLine = true
+                  elsif (e == "METHOD_EXIT")
+                     indent.pop
+                  elsif (e == "SOQL_EXECUTE_BEGIN")
+                    soqlLine = true
+                   elsif (e == "SOQL_EXECUTE_END")
+                    soqlLineFlush = true
+                  end
 
-                if (pos == 1 and (e == "METHOD_ENTRY" or e== "CODE_UNIT_STARTED"))
-                  indent.push("    ")
-                  methodLine = true
-                elsif (pos == 1 and (e == "METHOD_EXIT"))
-                   indent.pop
                 end
 
-                if (pos == 4 and methodLine == true and not(e.include? "__sfdc_"))
-                   puts indent.join + "calls " + e
+                if (pos == 3)
+                      if (soqlLineFlush == true)    
+                            filtered_puts :SOQL, indent.join + "      " + currentMethodName + " runs [" + soqlBuffer + "] and finds "  + e.split(":")[1] + " rows"
+                            soqlLineFlush = false
+                            soqlBuffer = ""
+                      end   
                 end
+
+                if (pos == 4)
+                  if (methodLine == true and not(e.include? "__sfdc_"))
+                   currentMethodName = e
+                   filtered_puts :METHOD, indent.join + "calls " + currentMethodName
+                  elsif (soqlLine == true)
+                   soqlBuffer = e;
+                  end
+                end
+
+
 
                 pos = pos + 1
              }
@@ -55,3 +99,4 @@ rescue => err
     puts "Exception: #{err}"
     err
 end
+

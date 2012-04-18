@@ -12,6 +12,14 @@ or (if you have ruby in /usr/bin/ruby)
 
  ./clarity.rb [logfilename]
 
+To see only method calls:
+
+  clarity.rb METHOD [logfilename]
+
+To see only SOQL query details:
+
+  clarity.rb SOQL [logfilename]
+
 Tested on OSX 10.7.3, ruby 1.8.7
 
 Expected log file is in the following format:
@@ -43,6 +51,8 @@ And outputs a log in the format:
                                             calls QueryBuilder.defaultAnd()
                                             calls QueryBuilder.addField(String)
                                             calls QueryBuilder.addFields(SET)
+						calls trigAccUpdateMobileOnOpp on PersonAccount trigger event AfterUpdate for [001O0000006CTX8]
+                                                      trigAccUpdateMobileOnOpp on PersonAccount trigger event AfterUpdate for [001O0000006CTX8] runs [select Id, Name, Mobile__c, Email__c, Account.PersonMobilePhone, Account.PersonEmail from Opportunity where AccountId IN :tmpVar1] and finds 0 rows
 
 
 Feedback welcome to @sherod on twitter or via github.  
