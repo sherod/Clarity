@@ -43,7 +43,7 @@ begin
       @currentMode = ARGV[0].intern
       filename = ARGV[1]  
     end
-
+ 
 
 
     indent = Array.new()
