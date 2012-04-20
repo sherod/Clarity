@@ -29,11 +29,11 @@ begin
     if (mode == @currentMode || @currentMode == :ALL)
         puts string
     end
+
   end
 
     if (ARGV.length < 1 or ARGV.length > 3)
-        puts "Usage: ruby clarity.rb [MODE] [filename]"
-        exit(1)
+        abort "Usage: ruby clarity.rb [MODE] [filename]"
     end
 
     if (ARGV.length == 1)
@@ -44,8 +44,8 @@ begin
       filename = ARGV[1]  
     end
 
-  
-    file = File.new(filename, "r")
+
+
     indent = Array.new()
     flushType = nil
     soqlBuffer = ""
@@ -53,83 +53,88 @@ begin
     currentRuleName = ""
     currentFilter = ""
     workflowCircumstance = ""
+    INDENT = " "
+    SEPERATOR = "|"
+  
+    file = File.new(filename, "r")
+   
     while (line = file.gets)
-            pos = 0
+            columnNumber = 0
             lineType = :unknown
 
-             line.split("|").each {|e|
-                e.strip!
-                if (pos == 1) 
+             line.split(SEPERATOR).each {|columnToken |
+                columnToken.strip!
+                if (columnNumber == 1) 
                   
-                  if (e == "METHOD_ENTRY" or e== "CODE_UNIT_STARTED")
-                    indent.push(" ")
+                  if (columnToken == "METHOD_ENTRY" or columnToken== "CODE_UNIT_STARTED")
+                    indent.push(INDENT)
                     lineType = :methodLine
-                  elsif (e == "METHOD_EXIT")
+                  elsif (columnToken == "METHOD_EXIT")
                      indent.pop
-                  elsif (e == "SOQL_EXECUTE_BEGIN")
+                  elsif (columnToken == "SOQL_EXECUTE_BEGIN")
                     lineType = :soqlLine
-                  elsif (e == "SOQL_EXECUTE_END")
+                  elsif (columnToken == "SOQL_EXECUTE_END")
                     flushType = :soqlLine
-                  elsif (e == "WF_CRITERIA_BEGIN")
+                  elsif (columnToken == "WF_CRITERIA_BEGIN")
                     lineType = :workflowLine
-                  elsif (e == "WF_CRITERIA_END")
+                  elsif (columnToken == "WF_CRITERIA_END")
                     lineType = :workflowLine
                     flushType = :workflowLine
-                  elsif (e == "WF_RULE_EVAL_BEGIN")
+                  elsif (columnToken == "WF_RULE_EVAL_BEGIN")
                     lineType = :workflowType
-                  elsif (e == "WF_RULE_FILTER")
+                  elsif (columnToken == "WF_RULE_FILTER")
                     lineType = :workflowFilter
                   end
 
                 end
 
-                if (pos == 2)
+                if (columnNumber == 2)
 
                   if (lineType == :workflowType)
-                     filtered_puts :WORKFLOW, "Running '" + e + "' rules" 
+                     filtered_puts :WORKFLOW, "Running '" + columnToken + "' rules" 
                   elsif (lineType == :workflowLine and flushType == :workflowLine)
-                      if (e.strip == 'false')
+                      if (columnToken == 'false')
                           d = 'did not'
-                      elsif (e.strip =='true')
-                          d = 'DID'
+                      else
+                        d = 'DID'
                       end
                       filtered_puts :WORKFLOW, " Rule '" + currentRuleName + "' " + d  + " fire" 
                       filtered_puts :WORKFLOW, "   Filter starts with '" + currentFilter + "...' and rule set to run on '" + workflowCircumstance + "'"
                       flushType = nil
                   elsif(lineType == :workflowFilter)
-                      currentFilter = e
+                      currentFilter = columnToken
                   end
 
                 end
 
-                if (pos == 3)
+                if (columnNumber == 3)
                     if (lineType == :workflowLine)
-                      currentRuleName = e
+                      currentRuleName = columnToken
                     end             
 
                     if (flushType == :soqlLine)    
-                          filtered_puts :SOQL, indent.join + "      " + currentMethodName + " runs [" + soqlBuffer + "] and finds "  + e.split(":")[1] + " rows"
+                          filtered_puts :SOQL, indent.join + "      " + currentMethodName + " runs [" + soqlBuffer + "] and finds "  + columnToken.split(":")[1] + " rows"
                           flushType = nil
                           soqlBuffer = ""
                     end   
                 end
 
-                if (pos == 4)
-                  if (lineType == :methodLine  and not(e.include? "__sfdc_"))
-                   currentMethodName = e
+                if (columnNumber == 4)
+                  if (lineType == :methodLine  and not(columnToken.include? "__sfdc_"))
+                   currentMethodName = columnToken
                    filtered_puts :METHOD, indent.join + "calls " + currentMethodName
                   elsif (lineType == :soqlLine)
-                   soqlBuffer = e;
+                   soqlBuffer = columnToken;
                   end
                 end
 
-                if (pos == 5)
+                if (columnNumber == 5)
                   if (lineType == :workflowLine)
-                    workflowCircumstance = e
+                    workflowCircumstance = columnToken
                   end
                 end
 
-                pos = pos + 1
+                columnNumber += 1
              }
     end
 
