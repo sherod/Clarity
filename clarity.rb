@@ -25,11 +25,11 @@
 begin
 
   def filtered_puts(mode, string)
-   
-  if (mode == @currentMode || @currentMode == :ALL)
-      puts string
+     
+    if (mode == @currentMode || @currentMode == :ALL)
+        puts string
+    end
   end
-end
 
     if (ARGV.length < 1 or ARGV.length > 3)
         puts "Usage: ruby clarity.rb [MODE] [filename]"
@@ -47,56 +47,93 @@ end
   
     file = File.new(filename, "r")
     indent = Array.new()
-    soqlLineFlush = false
+    flushType = nil
     soqlBuffer = ""
     currentMethodName = ""
-
+    currentRuleName = ""
+    currentFilter = ""
+    workflowCircumstance = ""
     while (line = file.gets)
             pos = 0
-            methodLine = false
-            soqlLine = false
+            lineType = :unknown
+
              line.split("|").each {|e|
                 e.strip!
                 if (pos == 1) 
                   
                   if (e == "METHOD_ENTRY" or e== "CODE_UNIT_STARTED")
                     indent.push(" ")
-                    methodLine = true
+                    lineType = :methodLine
                   elsif (e == "METHOD_EXIT")
                      indent.pop
                   elsif (e == "SOQL_EXECUTE_BEGIN")
-                    soqlLine = true
-                   elsif (e == "SOQL_EXECUTE_END")
-                    soqlLineFlush = true
+                    lineType = :soqlLine
+                  elsif (e == "SOQL_EXECUTE_END")
+                    flushType = :soqlLine
+                  elsif (e == "WF_CRITERIA_BEGIN")
+                    lineType = :workflowLine
+                  elsif (e == "WF_CRITERIA_END")
+                    lineType = :workflowLine
+                    flushType = :workflowLine
+                  elsif (e == "WF_RULE_EVAL_BEGIN")
+                    lineType = :workflowType
+                  elsif (e == "WF_RULE_FILTER")
+                    lineType = :workflowFilter
+                  end
+
+                end
+
+                if (pos == 2)
+
+                  if (lineType == :workflowType)
+                     filtered_puts :WORKFLOW, "Running '" + e + "' rules" 
+                  elsif (lineType == :workflowLine and flushType == :workflowLine)
+                      if (e.strip == 'false')
+                          d = 'did not'
+                      elsif (e.strip =='true')
+                          d = 'DID'
+                      end
+                      filtered_puts :WORKFLOW, " Rule '" + currentRuleName + "' " + d  + " fire" 
+                      filtered_puts :WORKFLOW, "   Filter starts with '" + currentFilter + "...' and rule set to run on '" + workflowCircumstance + "'"
+                      flushType = nil
+                  elsif(lineType == :workflowFilter)
+                      currentFilter = e
                   end
 
                 end
 
                 if (pos == 3)
-                      if (soqlLineFlush == true)    
-                            filtered_puts :SOQL, indent.join + "      " + currentMethodName + " runs [" + soqlBuffer + "] and finds "  + e.split(":")[1] + " rows"
-                            soqlLineFlush = false
-                            soqlBuffer = ""
-                      end   
+                    if (lineType == :workflowLine)
+                      currentRuleName = e
+                    end             
+
+                    if (flushType == :soqlLine)    
+                          filtered_puts :SOQL, indent.join + "      " + currentMethodName + " runs [" + soqlBuffer + "] and finds "  + e.split(":")[1] + " rows"
+                          flushType = nil
+                          soqlBuffer = ""
+                    end   
                 end
 
                 if (pos == 4)
-                  if (methodLine == true and not(e.include? "__sfdc_"))
+                  if (lineType == :methodLine  and not(e.include? "__sfdc_"))
                    currentMethodName = e
                    filtered_puts :METHOD, indent.join + "calls " + currentMethodName
-                  elsif (soqlLine == true)
+                  elsif (lineType == :soqlLine)
                    soqlBuffer = e;
                   end
                 end
 
-
+                if (pos == 5)
+                  if (lineType == :workflowLine)
+                    workflowCircumstance = e
+                  end
+                end
 
                 pos = pos + 1
              }
     end
+
     file.close
-rescue => err
-    puts "Exception: #{err}"
-    err
+
 end
 
