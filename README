@@ -20,6 +20,10 @@ To see only SOQL query details:
 
   clarity.rb SOQL [logfilename]
 
+to see only Workflow details
+
+  clarity.rb WORKFLOW [logfilename]
+
 Tested on OSX 10.7.3, ruby 1.8.7
 
 Expected log file is in the following format:
