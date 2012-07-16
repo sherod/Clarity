@@ -71,7 +71,9 @@ begin
                     lineType = :methodLine
                   elsif (columnToken == "METHOD_EXIT")
                      indent.pop
-                  elsif (columnToken == "SOQL_EXECUTE_BEGIN")
+                  elsif (columnToken == "USER_DEBUG")
+				     lineType = :debugLine
+				  elsif (columnToken == "SOQL_EXECUTE_BEGIN")
                     lineType = :soqlLine
                   elsif (columnToken == "SOQL_EXECUTE_END")
                     flushType = :soqlLine
@@ -125,6 +127,8 @@ begin
                    filtered_puts :METHOD, indent.join + "calls " + currentMethodName
                   elsif (lineType == :soqlLine)
                    soqlBuffer = columnToken;
+				  elsif (lineType == :debugLine)
+				   filtered_puts :METHOD, indent.join + "debug " + columnToken
                   end
                 end
 
